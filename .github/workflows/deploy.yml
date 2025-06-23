@@ -26,7 +26,6 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
         
     - name: Run tests
-        - name: Start application
     run: |
       $javaPath = "C:\Program Files\Java\jdk-17\bin\java.exe"
       $jarPath = "C:\apps\app.jar"
