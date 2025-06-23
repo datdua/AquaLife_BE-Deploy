@@ -91,7 +91,7 @@ jobs:
         }
         
         Start-Sleep -Seconds 5
-      shell: pwsh
+      shell: powershell
       continue-on-error: true
       
     - name: Backup current JAR
@@ -116,7 +116,7 @@ jobs:
         } else {
           Write-Host "ℹ️ No current JAR file found to backup"
         }
-      shell: pwsh
+      shell: powershell
       continue-on-error: true
       
     - name: Deploy new JAR
@@ -134,7 +134,7 @@ jobs:
           Write-Host "❌ No JAR file found in target directory"
           exit 1
         }
-      shell: pwsh
+      shell: powershell
       
     - name: Start Spring Boot application
       run: |
@@ -161,7 +161,7 @@ jobs:
           Write-Host "❌ JAR file not found at: $appPath"
           exit 1
         }
-      shell: pwsh
+      shell: powershell
       
     - name: Health check
       run: |
@@ -201,7 +201,7 @@ jobs:
         Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object State, OwningProcess
         
         exit 1
-      shell: pwsh
+      shell: powershell
       
     - name: Rollback on failure
       if: failure()
@@ -249,4 +249,4 @@ jobs:
         } else {
           Write-Host "❌ No backup file found for rollback"
         }
-      shell: pwsh
+      shell: powershell
