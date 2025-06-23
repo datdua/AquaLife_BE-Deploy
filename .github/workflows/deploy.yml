@@ -52,201 +52,110 @@ jobs:
     - name: Build with Maven
       run: mvn clean package -DskipTests
       
-    - name: Find and stop Spring Boot application
+    - name: Stop existing Java processes
       run: |
-        Write-Host "🔍 Finding Spring Boot application process..."
-        
-        # Tìm process Java đang chạy trên port 8080
-        $port8080Process = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object -First 1
-        
-        if ($port8080Process) {
-          $processId = $port8080Process.OwningProcess
-          Write-Host "📋 Found process using port 8080: PID $processId"
-          
-          try {
-            $process = Get-Process -Id $processId -ErrorAction Stop
-            Write-Host "🛑 Stopping process: $($process.ProcessName) (PID: $processId)"
-            Stop-Process -Id $processId -Force
-            Start-Sleep -Seconds 10
-            Write-Host "✅ Process stopped successfully"
-          } catch {
-            Write-Host "⚠️ Could not stop process: $($_.Exception.Message)"
-          }
-        } else {
-          Write-Host "ℹ️ No process found using port 8080"
-        }
-        
-        # Backup: Kill any remaining java processes that might be Spring Boot
-        $javaProcesses = Get-Process java -ErrorAction SilentlyContinue
-        foreach ($proc in $javaProcesses) {
-          try {
-            $cmdLine = (Get-WmiObject Win32_Process -Filter "ProcessId = $($proc.Id)").CommandLine
-            if ($cmdLine -and $cmdLine -like "*spring-boot*" -or $cmdLine -like "*.jar*") {
-              Write-Host "🛑 Stopping additional Spring Boot process: PID $($proc.Id)"
-              Stop-Process -Id $proc.Id -Force
-            }
-          } catch {
-            # Ignore errors for command line detection
-          }
-        }
-        
-        Start-Sleep -Seconds 5
+        Write-Host "Stopping existing Java processes..."
+        taskkill /F /IM java.exe /T
+        Start-Sleep -Seconds 10
+        Write-Host "Java processes stopped"
       shell: powershell
       continue-on-error: true
       
-    - name: Backup current JAR
+    - name: Create directories and backup
       run: |
         $appPath = "C:\apps"
         $backupPath = "C:\apps\backup"
         
-        # Tạo thư mục nếu chưa có
         if (!(Test-Path $appPath)) {
           New-Item -ItemType Directory -Path $appPath -Force
-        }
-        if (!(Test-Path $backupPath)) {
-          New-Item -ItemType Directory -Path $backupPath -Force
+          Write-Host "Created directory: $appPath"
         }
         
-        # Backup JAR file hiện tại
-        $currentJar = Get-ChildItem "$appPath\*.jar" -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($currentJar) {
-          $backupName = "backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')-$($currentJar.Name)"
-          Copy-Item $currentJar.FullName "$backupPath\$backupName" -Force
-          Write-Host "💾 Backed up current JAR to: $backupName"
-        } else {
-          Write-Host "ℹ️ No current JAR file found to backup"
+        if (!(Test-Path $backupPath)) {
+          New-Item -ItemType Directory -Path $backupPath -Force  
+          Write-Host "Created directory: $backupPath"
+        }
+        
+        $existingJar = Get-ChildItem "$appPath\*.jar" -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($existingJar) {
+          $backupName = "backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')-$($existingJar.Name)"
+          Copy-Item $existingJar.FullName "$backupPath\$backupName" -Force
+          Write-Host "Backed up existing JAR to: $backupName"
         }
       shell: powershell
       continue-on-error: true
       
     - name: Deploy new JAR
       run: |
-        $appPath = "C:\apps"
+        $targetJar = Get-ChildItem "target\*.jar" | Where-Object { $_.Name -notlike "*sources*" -and $_.Name -notlike "*javadoc*" } | Select-Object -First 1
         
-        # Tìm JAR file mới được build
-        $newJar = Get-ChildItem "target\*.jar" | Where-Object { $_.Name -notlike "*sources*" -and $_.Name -notlike "*javadoc*" } | Select-Object -First 1
-        
-        if ($newJar) {
-          $targetPath = "$appPath\app.jar"
-          Copy-Item $newJar.FullName $targetPath -Force
-          Write-Host "📦 Deployed new JAR: $($newJar.Name) -> $targetPath"
+        if ($targetJar) {
+          Copy-Item $targetJar.FullName "C:\apps\app.jar" -Force
+          Write-Host "Deployed new JAR: $($targetJar.Name)"
         } else {
-          Write-Host "❌ No JAR file found in target directory"
+          Write-Host "ERROR: No JAR file found in target directory"
           exit 1
         }
       shell: powershell
       
-    - name: Start Spring Boot application
+    - name: Start application
       run: |
-        $appPath = "C:\apps\app.jar"
         $javaPath = "C:\Program Files\Java\jdk-17\bin\java.exe"
+        $jarPath = "C:\apps\app.jar"
         
-        if (Test-Path $appPath) {
-          Write-Host "🚀 Starting Spring Boot application..."
-          
-          # Chạy ứng dụng trong background
-          $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-          $processInfo.FileName = $javaPath
-          $processInfo.Arguments = "-jar `"$appPath`""
-          $processInfo.UseShellExecute = $false
-          $processInfo.CreateNoWindow = $true
-          $processInfo.RedirectStandardOutput = $true
-          $processInfo.RedirectStandardError = $true
-          
-          $process = [System.Diagnostics.Process]::Start($processInfo)
-          Write-Host "✅ Application started with PID: $($process.Id)"
-          
-          Start-Sleep -Seconds 20
-        } else {
-          Write-Host "❌ JAR file not found at: $appPath"
-          exit 1
-        }
+        Write-Host "Starting Spring Boot application..."
+        Start-Process -FilePath $javaPath -ArgumentList "-jar", $jarPath -WindowStyle Hidden
+        Start-Sleep -Seconds 20
+        Write-Host "Application started"
       shell: powershell
       
     - name: Health check
       run: |
-        Write-Host "🏥 Starting health check..."
-        $maxAttempts = 30
+        Write-Host "Starting health check..."
+        $maxAttempts = 20
         $attempt = 0
-        $healthUrl = "http://localhost:8080/actuator/health"
+        $success = $false
         
         do {
           try {
-            $response = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 10
+            $response = Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing -TimeoutSec 5
             if ($response.StatusCode -eq 200) {
-              Write-Host "✅ Application is healthy! Response: $($response.StatusCode)"
-              Write-Host "📊 Health check passed at attempt $($attempt + 1)"
-              exit 0
+              Write-Host "SUCCESS: Application is healthy!"
+              $success = $true
+              break
             }
           } catch {
-            Write-Host "⏳ Health check attempt $($attempt + 1)/$maxAttempts failed: $($_.Exception.Message)"
-            
-            # Kiểm tra xem có process nào đang chạy trên port 8080 không
-            $portCheck = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue
-            if ($portCheck) {
-              Write-Host "📡 Port 8080 is active, waiting for application to be ready..."
-            } else {
-              Write-Host "⚠️ Port 8080 is not active, application may have failed to start"
-            }
+            Write-Host "Attempt $($attempt + 1): Waiting for application..."
           }
           $attempt++
           Start-Sleep -Seconds 10
         } while ($attempt -lt $maxAttempts)
         
-        Write-Host "❌ Health check failed after $maxAttempts attempts"
-        
-        # Log thông tin debug
-        Write-Host "🔍 Debug information:"
-        Get-Process java -ErrorAction SilentlyContinue | Select-Object Id, ProcessName, CPU
-        Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object State, OwningProcess
-        
-        exit 1
+        if (-not $success) {
+          Write-Host "ERROR: Health check failed after $maxAttempts attempts"
+          exit 1
+        }
       shell: powershell
       
     - name: Rollback on failure
       if: failure()
       run: |
-        Write-Host "🔄 Starting rollback process..."
+        Write-Host "ROLLBACK: Starting rollback process..."
         
-        # Stop current failed application
-        $port8080Process = Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | Select-Object -First 1
-        if ($port8080Process) {
-          Stop-Process -Id $port8080Process.OwningProcess -Force -ErrorAction SilentlyContinue
-          Start-Sleep -Seconds 5
-        }
+        taskkill /F /IM java.exe /T
+        Start-Sleep -Seconds 5
         
-        # Find most recent backup
-        $backupPath = "C:\apps\backup"
-        $backupFile = Get-ChildItem "$backupPath\backup-*.jar" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+        $backupFile = Get-ChildItem "C:\apps\backup\backup-*.jar" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
         
         if ($backupFile) {
-          Write-Host "📁 Found backup file: $($backupFile.Name)"
+          Write-Host "Restoring from backup: $($backupFile.Name)"
           Copy-Item $backupFile.FullName "C:\apps\app.jar" -Force
           
-          # Start backup version
           $javaPath = "C:\Program Files\Java\jdk-17\bin\java.exe"
-          $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-          $processInfo.FileName = $javaPath
-          $processInfo.Arguments = "-jar `"C:\apps\app.jar`""
-          $processInfo.UseShellExecute = $false
-          $processInfo.CreateNoWindow = $true
-          
-          $process = [System.Diagnostics.Process]::Start($processInfo)
-          Write-Host "✅ Rollback completed! Started backup version with PID: $($process.Id)"
-          
+          Start-Process -FilePath $javaPath -ArgumentList "-jar", "C:\apps\app.jar" -WindowStyle Hidden
           Start-Sleep -Seconds 15
-          
-          # Quick health check for rollback
-          try {
-            $response = Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing -TimeoutSec 10
-            if ($response.StatusCode -eq 200) {
-              Write-Host "✅ Rollback successful - application is responding"
-            }
-          } catch {
-            Write-Host "⚠️ Rollback completed but health check failed"
-          }
-          
+          Write-Host "ROLLBACK: Completed successfully"
         } else {
-          Write-Host "❌ No backup file found for rollback"
+          Write-Host "ROLLBACK: No backup file found"
         }
       shell: powershell
