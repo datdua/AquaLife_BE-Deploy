@@ -18,7 +18,7 @@ import vn.fpt.edu.aqualife.service.impl.IProductService;
 
 @RestController
 @RequestMapping("/api/v1/products")
-public class ProductControllerI {
+public class ProductControllerII {
 
 //    @Autowired
 //    private IProductService iproductService;
@@ -32,7 +32,7 @@ public class ProductControllerI {
 //    public ResponseEntity<Food> createFood(@RequestBody Food food) {
 //        return ResponseEntity.ok(iproductService.createFood(food));
 //    }
-//  
+//
 //    @PostMapping("/medicine")
 //    public ResponseEntity<Medicine> createMedicine(@RequestBody Medicine medicine) {
 //        return ResponseEntity.ok(iproductService.createMedicine(medicine));
