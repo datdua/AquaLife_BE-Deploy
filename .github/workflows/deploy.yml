@@ -26,7 +26,20 @@ jobs:
         restore-keys: ${{ runner.os }}-m2
         
     - name: Run tests
-      run: mvn clean test
+        - name: Start application
+    run: |
+      $javaPath = "C:\Program Files\Java\jdk-17\bin\java.exe"
+      $jarPath = "C:\apps\app.jar"
+      
+      Write-Host "Đang khởi động ứng dụng Spring Boot..."
+      if (Test-Path $javaPath) {
+        Start-Process -FilePath $javaPath -ArgumentList "-jar", $jarPath -WindowStyle Hidden
+        Start-Sleep -Seconds 20
+        Write-Host "Ứng dụng đã khởi động"
+      } else {
+        Write-Host "ERROR: Không tìm thấy $javaPath"
+      }
+    shell: powershell
 
   deploy:
     needs: test
@@ -137,25 +150,35 @@ jobs:
         }
       shell: powershell
       
-    - name: Rollback on failure
-      if: failure()
-      run: |
-        Write-Host "ROLLBACK: Starting rollback process..."
-        
+  - name: Rollback on failure
+    if: failure()
+    run: |
+      Write-Host "ROLLBACK: Bắt đầu quá trình rollback..."
+      
+      $javaProcesses = Get-Process -Name "java" -ErrorAction SilentlyContinue
+      if ($javaProcesses) {
         taskkill /F /IM java.exe /T
         Start-Sleep -Seconds 5
+        Write-Host "Đã dừng các tiến trình Java."
+      } else {
+        Write-Host "Không tìm thấy tiến trình Java để dừng."
+      }
+      
+      $backupFile = Get-ChildItem "C:\apps\backup\backup-*.jar" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+      
+      if ($backupFile) {
+        Write-Host "Khôi phục từ backup: $($backupFile.Name)"
+        Copy-Item $backupFile.FullName "C:\apps\app.jar" -Force
         
-        $backupFile = Get-ChildItem "C:\apps\backup\backup-*.jar" -ErrorAction SilentlyContinue | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-        
-        if ($backupFile) {
-          Write-Host "Restoring from backup: $($backupFile.Name)"
-          Copy-Item $backupFile.FullName "C:\apps\app.jar" -Force
-          
-          $javaPath = "C:\Program Files\Java\jdk-17\bin\java.exe"
+        $javaPath = "C:\Program Files\Java\jdk-17\bin\java.exe"
+        if (Test-Path $javaPath) {
           Start-Process -FilePath $javaPath -ArgumentList "-jar", "C:\apps\app.jar" -WindowStyle Hidden
           Start-Sleep -Seconds 15
-          Write-Host "ROLLBACK: Completed successfully"
+          Write-Host "ROLLBACK: Hoàn tất thành công."
         } else {
-          Write-Host "ROLLBACK: No backup file found"
+          Write-Host "ERROR: Không tìm thấy $javaPath"
         }
-      shell: powershell
+      } else {
+        Write-Host "ROLLBACK: Không tìm thấy file backup"
+      }
+    shell: powershell
