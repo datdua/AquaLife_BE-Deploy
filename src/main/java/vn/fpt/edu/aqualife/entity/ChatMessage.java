@@ -31,8 +31,8 @@ public class ChatMessage {
     private Integer chatMessageId;
 
     @ManyToOne
-    @JoinColumn(name = "UserID", nullable = false)
-    private User user;
+    @JoinColumn(name = "AccountID", nullable = false)
+    private Account account;
 
     @Column(name = "Message", nullable = false)
     private String message;

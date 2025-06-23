@@ -37,8 +37,8 @@ public class Shipping {
     private Integer shippingId;
 
     @ManyToOne
-    @JoinColumn(name = "UserAddID", nullable = false)
-    private UserAdd userAdd;
+    @JoinColumn(name = "AccountAddID", nullable = false)
+    private AccountAdd accountAdd;
 
     @Column(name = "Description")
     private String description;

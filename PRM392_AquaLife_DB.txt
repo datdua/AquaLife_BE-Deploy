@@ -1,20 +1,3 @@
--- Database: PRM392_AquaLife
-
--- DROP DATABASE IF EXISTS "PRM392_AquaLife";
-
--- CREATE DATABASE "PRM392_AquaLife"
---     WITH
---     OWNER = postgres
---     ENCODING = 'UTF8'
---     LC_COLLATE = 'vi-VN'
---     LC_CTYPE = 'vi-VN'
---     LOCALE_PROVIDER = 'libc'
---     TABLESPACE = pg_default
---     CONNECTION LIMIT = -1
---     IS_TEMPLATE = False;
-
-USING DATABASE "PRM392_AquaLife"
-
 CREATE TYPE "role_type" AS ENUM (
   'Customer',
   'Admin',
@@ -35,24 +18,24 @@ CREATE TYPE "product_status" AS ENUM (
 );
 
 CREATE TYPE "food_type" AS ENUM (
-  'dry',
-  'fresh'
+  'Dry',
+  'Fresh'
 );
 
 CREATE TYPE "shipping_status" AS ENUM (
-  'pending',
-  'shipping',
-  'done'
+  'Pending',
+  'Shipping',
+  'Done'
 );
 
 CREATE TYPE "order_status" AS ENUM (
-  'done',
-  'cancel',
-  'pending'
+  'Done',
+  'Cancel',
+  'Pending'
 );
 
-CREATE TABLE "User" (
-  "UserID" SERIAL PRIMARY KEY NOT NULL,
+CREATE TABLE "Account" (
+  "AccountID" SERIAL PRIMARY KEY NOT NULL,
   "FullName" VARCHAR(50) UNIQUE NOT NULL,
   "PasswordHash" VARCHAR(255) NOT NULL,
   "Email" VARCHAR(100) UNIQUE,
@@ -101,7 +84,7 @@ CREATE TABLE "Aquarium" (
 
 CREATE TABLE "Cart" (
   "CartID" SERIAL PRIMARY KEY NOT NULL,
-  "UserID" INTEGER NOT NULL,
+  "AccountID" INTEGER NOT NULL,
   "TotalPrice" DECIMAL(10,2) NOT NULL,
   "CartStatus" VARCHAR(50) NOT NULL
 );
@@ -114,9 +97,9 @@ CREATE TABLE "CartItem" (
   "Price" DECIMAL(10,2) NOT NULL
 );
 
-CREATE TABLE "UserAdd" (
-  "UserAddID" SERIAL PRIMARY KEY NOT NULL,
-  "UserID" INTEGER NOT NULL,
+CREATE TABLE "AccountAdd" (
+  "AccountAddID" SERIAL PRIMARY KEY NOT NULL,
+  "AccountID" INTEGER NOT NULL,
   "ShippingAddress" TEXT NOT NULL,
   "isDefault" BOOLEAN NOT NULL DEFAULT '0',
   "ShippingPhone" VARCHAR(20) NOT NULL
@@ -124,7 +107,7 @@ CREATE TABLE "UserAdd" (
 
 CREATE TABLE "Shipping" (
   "ShippingID" SERIAL PRIMARY KEY NOT NULL,
-  "UserAddID" INTEGER NOT NULL,
+  "AccountAddID" INTEGER NOT NULL,
   "Description" TEXT,
   "ShippingStatus" shipping_status NOT NULL,
   "DeliveryDate" TIMESTAMP
@@ -133,7 +116,7 @@ CREATE TABLE "Shipping" (
 CREATE TABLE "Order" (
   "OrderID" SERIAL PRIMARY KEY NOT NULL,
   "CartID" INTEGER NOT NULL,
-  "UserID" INTEGER NOT NULL,
+  "AccountID" INTEGER NOT NULL,
   "ShippingID" BIGINT NOT NULL,
   "PaymentMethod" VARCHAR(50) NOT NULL,
   "OrderStatus" order_status NOT NULL,
@@ -150,7 +133,7 @@ CREATE TABLE "Payment" (
 
 CREATE TABLE "Notification" (
   "NotificationID" SERIAL PRIMARY KEY NOT NULL,
-  "UserID" INTEGER NOT NULL,
+  "AccountID" INTEGER NOT NULL,
   "Message" TEXT,
   "isRead" BOOLEAN NOT NULL DEFAULT false,
   "CreateAt" TIMESTAMP(0) NOT NULL
@@ -158,14 +141,14 @@ CREATE TABLE "Notification" (
 
 CREATE TABLE "ChatMessage" (
   "ChatMessageID" SERIAL PRIMARY KEY NOT NULL,
-  "UserID" INTEGER NOT NULL,
+  "AccountID" INTEGER NOT NULL,
   "Message" TEXT NOT NULL,
   "SendAt" TIMESTAMP(0) NOT NULL
 );
 
 CREATE TABLE "Comment" (
   "CommentID" SERIAL PRIMARY KEY NOT NULL,
-  "UserID" INTEGER NOT NULL,
+  "AccountID" INTEGER NOT NULL,
   "Text" TEXT NOT NULL,
   "CreateAt" TIMESTAMP(0) NOT NULL
 );
@@ -197,28 +180,28 @@ ALTER TABLE "Medicine" ADD FOREIGN KEY ("ProductID") REFERENCES "Product" ("Prod
 
 ALTER TABLE "Aquarium" ADD FOREIGN KEY ("ProductID") REFERENCES "Product" ("ProductID");
 
-ALTER TABLE "Cart" ADD FOREIGN KEY ("UserID") REFERENCES "User" ("UserID");
+ALTER TABLE "Cart" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
 
 ALTER TABLE "CartItem" ADD FOREIGN KEY ("CartID") REFERENCES "Cart" ("CartID");
 
 ALTER TABLE "CartItem" ADD FOREIGN KEY ("ProductID") REFERENCES "Product" ("ProductID");
 
-ALTER TABLE "UserAdd" ADD FOREIGN KEY ("UserID") REFERENCES "User" ("UserID");
+ALTER TABLE "AccountAdd" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
 
-ALTER TABLE "Shipping" ADD FOREIGN KEY ("UserAddID") REFERENCES "UserAdd" ("UserAddID");
+ALTER TABLE "Shipping" ADD FOREIGN KEY ("AccountAddID") REFERENCES "AccountAdd" ("AccountAddID");
 
 ALTER TABLE "Order" ADD FOREIGN KEY ("CartID") REFERENCES "Cart" ("CartID");
 
-ALTER TABLE "Order" ADD FOREIGN KEY ("UserID") REFERENCES "User" ("UserID");
+ALTER TABLE "Order" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
 
 ALTER TABLE "Order" ADD FOREIGN KEY ("ShippingID") REFERENCES "Shipping" ("ShippingID");
 
 ALTER TABLE "Payment" ADD FOREIGN KEY ("OrderID") REFERENCES "Order" ("OrderID");
 
-ALTER TABLE "Notification" ADD FOREIGN KEY ("UserID") REFERENCES "User" ("UserID");
+ALTER TABLE "Notification" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
 
-ALTER TABLE "ChatMessage" ADD FOREIGN KEY ("UserID") REFERENCES "User" ("UserID");
+ALTER TABLE "ChatMessage" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
 
-ALTER TABLE "Comment" ADD FOREIGN KEY ("UserID") REFERENCES "User" ("UserID");
+ALTER TABLE "Comment" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
 
 ALTER TABLE "Blog" ADD FOREIGN KEY ("CommentID") REFERENCES "Comment" ("CommentID");

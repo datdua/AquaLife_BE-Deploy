@@ -34,8 +34,8 @@ public class Comment {
     private Integer commentId;
 
     @ManyToOne
-    @JoinColumn(name = "UserID", nullable = false)
-    private User user;
+    @JoinColumn(name = "AccountID", nullable = false)
+    private Account account;
 
     @Column(name = "Text", nullable = false)
     private String text;

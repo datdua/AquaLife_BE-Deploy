@@ -19,22 +19,22 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "UserAdd")
+@Table(name = "AccountAdd")
 @Getter
 @Setter
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserAdd {
-    
+public class AccountAdd {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "UserAddID")
-    private Integer userAddId;
+    @Column(name = "AccountAddID")
+    private Integer accountAddId;
 
     @ManyToOne
-    @JoinColumn(name = "UserID", nullable = false)
-    private User user;
+    @JoinColumn(name = "AccountID", nullable = false)
+    private Account account;
 
     @Column(name = "ShippingAddress", nullable = false)
     private String shippingAddress;
@@ -45,6 +45,6 @@ public class UserAdd {
     @Column(name = "ShippingPhone", nullable = false, length = 20)
     private String shippingPhone;
 
-    @OneToMany(mappedBy = "userAdd", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "accountAdd", cascade = CascadeType.ALL)
     private List<Shipping> shippings;
 }

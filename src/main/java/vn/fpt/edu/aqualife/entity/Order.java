@@ -41,8 +41,8 @@ public class Order {
     private Cart cart;
 
     @ManyToOne
-    @JoinColumn(name = "UserID", nullable = false)
-    private User user;
+    @JoinColumn(name = "AccountID", nullable = false)
+    private Account account;
 
     @ManyToOne
     @JoinColumn(name = "ShippingID", nullable = false)
