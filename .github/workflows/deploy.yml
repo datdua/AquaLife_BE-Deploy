@@ -7,7 +7,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows, X64]
     
     steps:
     - uses: actions/checkout@v3
@@ -25,14 +25,37 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
     
-    # Cải thiện: Sử dụng Maven Wrapper thay vì Maven trực tiếp
-    - name: Set executable permission for Maven Wrapper
-      run: chmod +x ./mvnw
-      shell: bash
+    # Kiểm tra Maven Wrapper trên Windows
+    - name: Check Maven Wrapper files
+      run: |
+        Write-Host "Checking Maven Wrapper files..."
+        if (Test-Path ".\mvnw.cmd") {
+          Write-Host "✓ mvnw.cmd found"
+        } else {
+          Write-Host "✗ mvnw.cmd NOT found"
+        }
+        if (Test-Path ".\.mvn\wrapper\maven-wrapper.properties") {
+          Write-Host "✓ maven-wrapper.properties found"
+        } else {
+          Write-Host "✗ maven-wrapper.properties NOT found"
+        }
+        if (Test-Path ".\.mvn\wrapper\maven-wrapper.jar") {
+          Write-Host "✓ maven-wrapper.jar found"
+        } else {
+          Write-Host "✗ maven-wrapper.jar NOT found"
+        }
+      shell: powershell
       
     - name: Run tests with Maven Wrapper
-      run: ./mvnw test
-      shell: bash
+      run: |
+        Write-Host "Running tests with Maven Wrapper..."
+        if (Test-Path ".\mvnw.cmd") {
+          .\mvnw.cmd test
+        } else {
+          Write-Host "ERROR: Maven Wrapper not found. Please ensure mvnw.cmd exists in project root."
+          exit 1
+        }
+      shell: powershell
 
   deploy:
     needs: test
@@ -76,13 +99,44 @@ jobs:
       run: |
         Write-Host "Building with Maven Wrapper..."
         if (Test-Path ".\mvnw.cmd") {
+          Write-Host "Using Maven Wrapper..."
           .\mvnw.cmd clean package -DskipTests
+          Write-Host "Build completed successfully!"
         } else {
-          Write-Host "Maven Wrapper not found, trying to install Maven..."
-          # Fallback: Cài đặt Maven nếu wrapper không có
-          choco install maven -y
-          refreshenv
-          mvn clean package -DskipTests
+          Write-Host "ERROR: Maven Wrapper (mvnw.cmd) not found!"
+          Write-Host "Available files in root directory:"
+          Get-ChildItem . | ForEach-Object { Write-Host "  $($_.Name)" }
+          
+          # Thử tìm Maven đã cài sẵn trên hệ thống
+          Write-Host "Trying to find system Maven..."
+          $mavenPaths = @(
+            "C:\apache-maven*\bin\mvn.cmd",
+            "C:\Program Files\Apache\Maven*\bin\mvn.cmd",
+            "C:\tools\apache-maven*\bin\mvn.cmd"
+          )
+          
+          $foundMaven = $false
+          foreach ($path in $mavenPaths) {
+            $mavenExe = Get-ChildItem $path -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($mavenExe) {
+              Write-Host "Found Maven at: $($mavenExe.FullName)"
+              & $mavenExe.FullName clean package -DskipTests
+              $foundMaven = $true
+              break
+            }
+          }
+          
+          if (-not $foundMaven) {
+            Write-Host "Installing Maven via Chocolatey..."
+            try {
+              choco install maven -y
+              refreshenv
+              mvn clean package -DskipTests
+            } catch {
+              Write-Host "ERROR: Could not install or use Maven"
+              exit 1
+            }
+          }
         }
       shell: powershell
       
