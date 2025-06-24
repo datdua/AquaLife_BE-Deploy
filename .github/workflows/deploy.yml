@@ -24,9 +24,14 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
-        
-    - name: Run tests
-      run: mvn test
+    
+    # Cải thiện: Sử dụng Maven Wrapper thay vì Maven trực tiếp
+    - name: Set executable permission for Maven Wrapper
+      run: chmod +x ./mvnw
+      shell: bash
+      
+    - name: Run tests with Maven Wrapper
+      run: ./mvnw test
       shell: bash
 
   deploy:
@@ -49,9 +54,37 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
-        
-    - name: Build with Maven
-      run: mvn clean package -DskipTests
+    
+    # Cải thiện: Kiểm tra và sử dụng Maven Wrapper trên Windows
+    - name: Check Maven Wrapper files
+      run: |
+        Write-Host "Checking Maven Wrapper files..."
+        if (Test-Path ".\mvnw.cmd") {
+          Write-Host "mvnw.cmd found"
+        } else {
+          Write-Host "mvnw.cmd NOT found"
+        }
+        if (Test-Path ".\.mvn\wrapper\maven-wrapper.properties") {
+          Write-Host "maven-wrapper.properties found"
+          Get-Content ".\.mvn\wrapper\maven-wrapper.properties"
+        } else {
+          Write-Host "maven-wrapper.properties NOT found"
+        }
+      shell: powershell
+      
+    - name: Build with Maven Wrapper
+      run: |
+        Write-Host "Building with Maven Wrapper..."
+        if (Test-Path ".\mvnw.cmd") {
+          .\mvnw.cmd clean package -DskipTests
+        } else {
+          Write-Host "Maven Wrapper not found, trying to install Maven..."
+          # Fallback: Cài đặt Maven nếu wrapper không có
+          choco install maven -y
+          refreshenv
+          mvn clean package -DskipTests
+        }
+      shell: powershell
       
     - name: Stop existing Java processes
       run: |
@@ -95,6 +128,9 @@ jobs:
           Write-Host "Deployed new JAR: $($targetJar.Name)"
         } else {
           Write-Host "ERROR: No JAR file found in target directory"
+          # Debug: List all files in target directory
+          Write-Host "Files in target directory:"
+          Get-ChildItem "target\" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.Name }
           exit 1
         }
       shell: powershell
@@ -111,6 +147,20 @@ jobs:
           Write-Host "Application started"
         } else {
           Write-Host "ERROR: Không tìm thấy $javaPath"
+          # Try alternative Java paths
+          $altJavaPaths = @(
+            "C:\Program Files\Eclipse Adoptium\jdk-17*\bin\java.exe",
+            "C:\Program Files\OpenJDK\jdk-17*\bin\java.exe"
+          )
+          foreach ($path in $altJavaPaths) {
+            $foundJava = Get-ChildItem $path -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($foundJava) {
+              Start-Process -FilePath $foundJava.FullName -ArgumentList "-jar", $jarPath -WindowStyle Hidden
+              Start-Sleep -Seconds 20
+              Write-Host "Application started with $($foundJava.FullName)"
+              break
+            }
+          }
         }
       shell: powershell
       
