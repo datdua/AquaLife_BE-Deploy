@@ -14,6 +14,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "Blog")
 @Getter
@@ -37,4 +39,13 @@ public class Blog {
 
     @Column(name = "Description", nullable = false)
     private String description;
+
+    @Column(name = "createdAt", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "changeAt", nullable = false)
+    private LocalDateTime changeAt;
+
+    @Column(name = "isActive", nullable = false)
+    private Boolean isActive;
 }

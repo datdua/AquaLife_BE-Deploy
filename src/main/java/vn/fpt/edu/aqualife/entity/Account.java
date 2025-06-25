@@ -1,5 +1,6 @@
 package vn.fpt.edu.aqualife.entity;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -52,6 +53,15 @@ public class Account {
 
     @Column(name = "AvatarUrl")
     private String avatarUrl;
+
+    @Column(name = "IsActive")
+    private Boolean isActive;
+
+    @Column(name = "createdAt")
+    private LocalDateTime createdAt;
+
+    @Column(name = "changedAt")
+    private LocalDateTime changedAt;
 
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL)
     private List<Cart> carts;

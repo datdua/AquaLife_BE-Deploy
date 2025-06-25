@@ -50,6 +50,12 @@ public class Shipping {
     @Column(name = "DeliveryDate")
     private LocalDateTime deliveryDate;
 
+    @Column(name = "CreatedAt", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "ChangeAt", nullable = false)
+    private LocalDateTime changeAt;
+
     @OneToMany(mappedBy = "shipping", cascade = CascadeType.ALL)
     private List<Order> orders; 
 }

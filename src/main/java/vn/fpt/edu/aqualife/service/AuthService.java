@@ -16,6 +16,7 @@ import vn.fpt.edu.aqualife.payload.response.AuthResponse;
 import vn.fpt.edu.aqualife.repository.AccountRepository;
 import vn.fpt.edu.aqualife.service.impl.IAuthService;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 
 @Service
@@ -42,6 +43,9 @@ public class AuthService implements IAuthService {
         account.setEmail(request.getEmail());
         account.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         account.setRole(RoleType.CUSTOMER);
+        account.setIsActive(true);
+        account.setCreatedAt(LocalDateTime.now());
+        account.setChangedAt(LocalDateTime.now());
 
         accountRepository.save(account);
 
@@ -70,6 +74,11 @@ public class AuthService implements IAuthService {
 
         Account account = accountRepository.findByPhoneNumber(request.getPhoneNumber())
                 .orElseThrow(() -> new IllegalArgumentException("Invalid phone number or password"));
+
+        // Check if the account is active
+        if (!account.getIsActive()) {
+            throw new IllegalArgumentException("Account is not active");
+        }
 
         UserDetails userDetails = User.builder()
                 .username(account.getPhoneNumber())

@@ -43,6 +43,12 @@ public class Comment {
     @Column(name = "CreateAt", nullable = false)
     private LocalDateTime createAt;
 
+    @Column(name = "ChangeAt", nullable = false)
+    private LocalDateTime changeAt;
+
+    @Column(name = "isActive", nullable = false)
+    private Boolean isActive;
+
     @OneToMany(mappedBy = "comment", cascade = CascadeType.ALL)
     private List<Blog> blogs; 
 }

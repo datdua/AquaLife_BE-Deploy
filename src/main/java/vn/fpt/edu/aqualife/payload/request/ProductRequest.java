@@ -3,6 +3,7 @@ package vn.fpt.edu.aqualife.payload.request;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import vn.fpt.edu.aqualife.enums.ProductStatus;
+import vn.fpt.edu.aqualife.enums.ProductType;
 
 import java.math.BigDecimal;
 
@@ -26,4 +27,7 @@ public class ProductRequest {
     @NotNull(message = "Giá không được để trống")
     @DecimalMin(value = "0.0", inclusive = true, message = "Giá phải lớn hơn hoặc bằng 0")
     private BigDecimal price;
+
+    @NotNull(message = "Loại sản phẩm không được để trống")
+    private ProductType productType;
 }

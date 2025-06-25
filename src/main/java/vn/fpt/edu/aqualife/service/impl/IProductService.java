@@ -12,22 +12,17 @@ import vn.fpt.edu.aqualife.payload.request.AquariumRequest;
 import vn.fpt.edu.aqualife.payload.request.FishRequest;
 import vn.fpt.edu.aqualife.payload.request.FoodRequest;
 import vn.fpt.edu.aqualife.payload.request.MedicineRequest;
+import vn.fpt.edu.aqualife.payload.response.ApiResponse;
 
 public interface IProductService {
-//    Product createProduct(Product product);
-//    Fish createFish(Fish fish);
-//    Food createFood(Food food);
-//    Medicine createMedicine(Medicine medicine);
-//    Aquarium createAquarium(Aquarium aquarium);
-//    List<Product> searchProducts(String keyword, ProductType type, Double minPrice, Double maxPrice, String sortBy);
-//    Product updateProduct(Integer id, Product product);
-//    void deleteProduct(Integer id);
-    Product createProduct(Product product);
-    Product createFish(FishRequest fishRequest);
-    Product createFood(FoodRequest foodRequest);
-    Product createMedicine(MedicineRequest medicineRequest);
-    Product createAquarium(AquariumRequest aquariumRequest);
-    List<Product> searchProducts(String keyword, ProductType type, Double minPrice, Double maxPrice, String sortBy);
-    Product updateProduct(Integer id, Product product);
-    void deleteProduct(Integer id);
+
+    ApiResponse createFish(FishRequest fishRequest);
+    ApiResponse createFood(FoodRequest foodRequest);
+    ApiResponse createMedicine(MedicineRequest medicineRequest);
+    ApiResponse createAquarium(AquariumRequest aquariumRequest);
+    ApiResponse searchProducts(String keyword, ProductType type, Double minPrice, Double maxPrice, String sortBy);
+    ApiResponse updateFish(Integer id, FishRequest fishRequest);
+    ApiResponse updateFood(Integer id, FoodRequest foodRequest);
+    ApiResponse updateMedicine(Integer id, MedicineRequest medicineRequest);
+    ApiResponse updateAquarium(Integer id, AquariumRequest aquariumRequest);
 }

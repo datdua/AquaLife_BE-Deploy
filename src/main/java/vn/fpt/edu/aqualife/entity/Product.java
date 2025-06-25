@@ -1,6 +1,7 @@
 package vn.fpt.edu.aqualife.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.*;
@@ -44,6 +45,12 @@ public class Product {
 
     @Column(name = "Price", nullable = false, precision = 10, scale = 2)
     private BigDecimal price;
+
+    @Column(name = "CreatedAt", nullable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "ChangeAt", nullable = false)
+    private LocalDateTime changeAt;
 
     @OneToOne(mappedBy = "product", cascade = CascadeType.ALL)
     private Fish fish;

@@ -1,8 +1,6 @@
 CREATE TYPE "role_type" AS ENUM (
   'Customer',
   'Admin',
-  'Manager',
-  'Staff'
 );
 
 CREATE TYPE "product_type" AS ENUM (
@@ -13,8 +11,8 @@ CREATE TYPE "product_type" AS ENUM (
 );
 
 CREATE TYPE "product_status" AS ENUM (
-  'in stock',
-  'out of stock'
+  'IN_STOCK',
+  'OUT_OF_STOCK'
 );
 
 CREATE TYPE "food_type" AS ENUM (
@@ -42,7 +40,10 @@ CREATE TABLE "Account" (
   "PhoneNumber" VARCHAR(20) UNIQUE,
   "Address" TEXT,
   "Role" role_type NOT NULL,
-  "AvatarUrl" TEXT
+  "AvatarUrl" TEXT,
+  "IsActive" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(0) NOT NULL,
+  "changedAt" TIMESTAMP(0) NOT NULL
 );
 
 CREATE TABLE "Product" (
@@ -53,7 +54,9 @@ CREATE TABLE "Product" (
   "ImageUrl" TEXT,
   "Description" TEXT,
   "Quantity" INTEGER NOT NULL,
-  "Price" DECIMAL(10,2) NOT NULL
+  "Price" DECIMAL(10,2) NOT NULL,
+  "createdAt" TIMESTAMP(0) NOT NULL,
+  "changeAt" TIMESTAMP(0) NOT NULL
 );
 
 CREATE TABLE "Fish" (
@@ -101,8 +104,11 @@ CREATE TABLE "AccountAdd" (
   "AccountAddID" SERIAL PRIMARY KEY NOT NULL,
   "AccountID" INTEGER NOT NULL,
   "ShippingAddress" TEXT NOT NULL,
-  "isDefault" BOOLEAN NOT NULL DEFAULT '0',
-  "ShippingPhone" VARCHAR(20) NOT NULL
+  "isDefault" BOOLEAN NOT NULL DEFAULT false,
+  "ShippingPhone" VARCHAR(20) NOT NULL,
+  "isActive" BOOLEAN NOT NULL DEFAULT true,
+  "createdAt" TIMESTAMP(0) NOT NULL,
+  "changeAt" TIMESTAMP(0) NOT NULL
 );
 
 CREATE TABLE "Shipping" (
@@ -110,14 +116,16 @@ CREATE TABLE "Shipping" (
   "AccountAddID" INTEGER NOT NULL,
   "Description" TEXT,
   "ShippingStatus" shipping_status NOT NULL,
-  "DeliveryDate" TIMESTAMP
+  "DeliveryDate" TIMESTAMP,
+  "CreatedAt" TIMESTAMP(0) NOT NULL,
+  "ChangeAt" TIMESTAMP(0) NOT NULL
 );
 
 CREATE TABLE "Order" (
   "OrderID" SERIAL PRIMARY KEY NOT NULL,
   "CartID" INTEGER NOT NULL,
   "AccountID" INTEGER NOT NULL,
-  "ShippingID" BIGINT NOT NULL,
+  "ShippingID" INTEGER NOT NULL,
   "PaymentMethod" VARCHAR(50) NOT NULL,
   "OrderStatus" order_status NOT NULL,
   "OrderDate" TIMESTAMP(0) NOT NULL
@@ -150,58 +158,42 @@ CREATE TABLE "Comment" (
   "CommentID" SERIAL PRIMARY KEY NOT NULL,
   "AccountID" INTEGER NOT NULL,
   "Text" TEXT NOT NULL,
-  "CreateAt" TIMESTAMP(0) NOT NULL
+  "CreateAt" TIMESTAMP(0) NOT NULL,
+  "ChangeAt" TIMESTAMP(0) NOT NULL,
+  "isActive" BOOLEAN NOT NULL DEFAULT true
 );
 
 CREATE TABLE "Blog" (
   "BlogID" SERIAL PRIMARY KEY NOT NULL,
   "CommentID" INTEGER NOT NULL,
   "BlogTitle" VARCHAR(200) NOT NULL,
-  "Description" TEXT NOT NULL
+  "Description" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(0) NOT NULL,
+  "changeAt" TIMESTAMP(0) NOT NULL,
+  "isActive" BOOLEAN NOT NULL DEFAULT true
 );
 
 COMMENT ON COLUMN "Product"."Quantity" IS 'CHECK (Quantity >= 0)';
-
 COMMENT ON COLUMN "Product"."Price" IS 'CHECK (Price >= 0)';
-
 COMMENT ON COLUMN "Cart"."TotalPrice" IS 'CHECK (TotalPrice >= 0)';
-
 COMMENT ON COLUMN "CartItem"."Quantity" IS 'CHECK (Quantity > 0)';
-
 COMMENT ON COLUMN "CartItem"."Price" IS 'CHECK (Price >= 0)';
-
 COMMENT ON COLUMN "Payment"."Amount" IS 'CHECK (Amount >= 0)';
 
 ALTER TABLE "Fish" ADD FOREIGN KEY ("ProductID") REFERENCES "Product" ("ProductID");
-
 ALTER TABLE "Food" ADD FOREIGN KEY ("ProductID") REFERENCES "Product" ("ProductID");
-
 ALTER TABLE "Medicine" ADD FOREIGN KEY ("ProductID") REFERENCES "Product" ("ProductID");
-
 ALTER TABLE "Aquarium" ADD FOREIGN KEY ("ProductID") REFERENCES "Product" ("ProductID");
-
 ALTER TABLE "Cart" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
-
 ALTER TABLE "CartItem" ADD FOREIGN KEY ("CartID") REFERENCES "Cart" ("CartID");
-
 ALTER TABLE "CartItem" ADD FOREIGN KEY ("ProductID") REFERENCES "Product" ("ProductID");
-
 ALTER TABLE "AccountAdd" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
-
 ALTER TABLE "Shipping" ADD FOREIGN KEY ("AccountAddID") REFERENCES "AccountAdd" ("AccountAddID");
-
 ALTER TABLE "Order" ADD FOREIGN KEY ("CartID") REFERENCES "Cart" ("CartID");
-
 ALTER TABLE "Order" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
-
 ALTER TABLE "Order" ADD FOREIGN KEY ("ShippingID") REFERENCES "Shipping" ("ShippingID");
-
 ALTER TABLE "Payment" ADD FOREIGN KEY ("OrderID") REFERENCES "Order" ("OrderID");
-
 ALTER TABLE "Notification" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
-
 ALTER TABLE "ChatMessage" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
-
 ALTER TABLE "Comment" ADD FOREIGN KEY ("AccountID") REFERENCES "Account" ("AccountID");
-
 ALTER TABLE "Blog" ADD FOREIGN KEY ("CommentID") REFERENCES "Comment" ("CommentID");
