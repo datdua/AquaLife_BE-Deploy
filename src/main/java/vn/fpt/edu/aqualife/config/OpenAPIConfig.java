@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Configuration;
         info = @Info(
                 contact = @Contact(name = "AquaLife", email = "contact@AquaLife.com", url = "https://AquaLife.com"),
                 description = "OpenApi documentation for AquaLife application",
-                title = "OpenApi specification - AquaLife GitHub",
+                title = "OpenApi specification - AquaLife",
                 version = "1.0",
                 license = @License(name = "License name", url = "https://some-url.com"),
                 termsOfService = "Terms of service"
